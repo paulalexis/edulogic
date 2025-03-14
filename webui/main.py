@@ -1,4 +1,5 @@
-from flask import Flask, render_template
+from flask import Flask, jsonify, render_template
+from flask_cors import CORS # This lets React talk to Python
 from PySpice.Probe.Plot import plot
 from PySpice.Spice.Library import SpiceLibrary
 from PySpice.Spice.Netlist import Circuit
@@ -8,25 +9,24 @@ import io
 
 import matplotlib.pyplot as plt
 
-
 import PySpice.Logging.Logging as Logging
 logger = Logging.setup_logging()
-
 
 from PySpice.Doc.ExampleTools import find_libraries
 from PySpice.Probe.Plot import plot
 from PySpice.Spice.Library import SpiceLibrary
 from PySpice.Spice.Netlist import Circuit
 from PySpice.Physics.SemiConductor import ShockleyDiode
-
 from PySpice.Unit import *
 
+from graph import *
 
 libraries_path = find_libraries()
 spice_library = SpiceLibrary(libraries_path)
 
 
 app = Flask(__name__)
+CORS(app)
 
 @app.route('/')
 def index():
@@ -78,6 +78,33 @@ def index():
     image_base64 = base64.b64encode(buf.getvalue()).decode('utf-8')
     
     return f'<h1>Resistor Divider</h1><img src="data:image/png;base64,{image_base64}"/>'
+
+
+@app.route('/api/message')
+def get_message():
+    message = {"text": "Hello from the Python backend!"}
+    return jsonify(message)
+
+
+@app.route('/api/graph')
+def get_graph_data():
+    nodes = [
+        Node(id="1", position=Position(x=0, y=0), data=NodeData(label="[Py] Select me to show the toolbar")),
+        Node(id="2", position=Position(x=100, y=200), data=NodeData(label="Hello from the Python")),
+        Node(id="3", position=Position(x=500, y=200), data=NodeData(label="[Py] Node 3")),
+    ]
+    edges = [
+        Edge(id="e1-2", source="1", target="2", sourceHandle="0", targetHandle="2", data=EdgeData(10)),
+        Edge(id="e2-1", source="2", target="1", sourceHandle="0", targetHandle="2", data=EdgeData(10)),
+        Edge(id="e3-1", source="3", target="1", sourceHandle="2", targetHandle="3", data=EdgeData(-5)),
+    ]
+
+    # Convert dataclasses to dictionaries for JSON serialization
+    nodes_dict = [node.__dict__ for node in nodes]
+    edges_dict = [edge.__dict__ for edge in edges]
+
+    return jsonify({"nodes": nodes_dict, "edges": edges_dict})
+
 
 if __name__ == '__main__':
     app.run(debug=True)
