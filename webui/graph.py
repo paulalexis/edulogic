@@ -29,3 +29,16 @@ class Edge:
     sourceHandle: str
     targetHandle: str
     data: EdgeData
+
+@dataclass
+class Element:
+    address: int
+    component: str
+    value: float | tuple[float, float]
+
+@dataclass
+class Connection:
+    address1: int
+    port1: int
+    address2: int
+    port2: int
