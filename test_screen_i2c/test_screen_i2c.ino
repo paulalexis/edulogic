@@ -281,7 +281,7 @@ const unsigned char epd_bitmap_diode [] PROGMEM = {
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
-int button = 2;
+int button = A3;
 int component = 0;
 long millis_button_buffer = 0;
 
@@ -317,10 +317,10 @@ void setup() {
 
 void loop() {
   int state_button = digitalRead(button);
+  Serial.println(analogRead(button));
   if ((millis() > millis_button_buffer + 500) && (state_button == 1)){
     component = (component + 1)%4;
     millis_button_buffer = millis();
   }
   draw_component(component);
-  Serial.println(millis());
 }
