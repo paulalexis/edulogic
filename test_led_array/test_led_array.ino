@@ -34,7 +34,7 @@ template<typename T> struct span {
     const T *end() const { return _end; }
 };
 
-array<bool, 4> led_states = {false, false, false, true};
+array<bool, 8> led_states = {true, false, false, false, false, false, false, false};
 long  time_register = 0;
 
 void setup() {
@@ -49,31 +49,37 @@ void setup() {
   Serial.begin(9600);
 }
 
-void turn_on(array<bool, 4> led_states){
+void turn_on(array<bool, 8> led_states){
+
+  digitalWrite(6, 0);
+  digitalWrite(7, 0);
+
   if (int(millis())%2 == 0){
     digitalWrite(6, 1);
-    digitalWrite(7, 0);
 
     digitalWrite(2, !led_states[0]);
     digitalWrite(3, !led_states[1]);
-  } else {
-    digitalWrite(6, 0);
-    digitalWrite(7, 1);
-
     digitalWrite(4, !led_states[2]);
     digitalWrite(5, !led_states[3]);
+  } else {
+    digitalWrite(7, 1);
+
+    digitalWrite(2, !led_states[4]);
+    digitalWrite(3, !led_states[5]);
+    digitalWrite(4, !led_states[6]);
+    digitalWrite(5, !led_states[7]);
   }
 }
 
 void loop() {
-  if (millis() > time_register + 1000){
-    const bool last = led_states[3];
+  if (millis() > time_register + 50){
+    const bool last = led_states[led_states.size() - 1];
     for (auto i = led_states.size() - 1; i > 0 ; i--){
       led_states[i] = led_states[i-1];
     }
     led_states[0] = last;
     time_register = millis();
-    
+
     Serial.println();
   }
   turn_on(led_states);
