@@ -1,3 +1,5 @@
+import numpy as np
+
 from dataclasses import dataclass
 from typing import Dict, Any, List
 
@@ -9,17 +11,20 @@ class Position:
 @dataclass
 class NodeData:
     label: str
+    component: str
+    port_potentials: List[float]
+    time: List[float]
 
 @dataclass
 class Node:
     id: str
     position: Position
-    # type: str
     data: NodeData
 
 @dataclass
 class EdgeData:
-    current: float
+    current: List[float]
+    time: List[float]
 
 @dataclass
 class Edge:

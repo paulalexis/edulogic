@@ -18,6 +18,7 @@ import {
 import "@xyflow/react/dist/style.css";
 
 import { AnimatedCurrent } from "./AnimatedCurrent";
+import { Graph } from "./GraphHover";
 
 const nodeTypes = {
   "node-with-toolbar": NodeWithToolbar,
@@ -27,6 +28,9 @@ const edgeTypes = {
 };
 
 function NodeWithToolbar({ data }) {
+  const xValues = [1, 2, 3, 4, 5];
+  const yValues = [10, 15, 7, 20, 12];
+
   return (
     <>
       {["0", "1", "2", "3"].map((id, k) => (
@@ -63,9 +67,17 @@ function NodeWithToolbar({ data }) {
         isVisible={data.forceToolbarVisible || undefined}
         position={data.toolbarPosition}
       >
-        <button>cut</button>
-        <button>copy</button>
-        <button>paste</button>
+        <div style={{ width: "40vw" }}>
+          <Graph
+            x={data.time}
+            y={data.port_potentials[2].map(
+              (_, idx) =>
+                data.port_potentials[2][idx] - data.port_potentials[0][idx]
+            )}
+            xlabel="Temps [s]"
+            ylabel="Différence de potentiel [V]"
+          />
+        </div>
       </NodeToolbar>
       <div>{data?.label}</div>
     </>
@@ -83,7 +95,6 @@ const CustomNodeFlow = () => {
     fetch("http://127.0.0.1:5000/api/graph")
       .then((response) => response.json())
       .then((data) => {
-        console.log(JSON.stringify(data));
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         setNodes((_old) =>
           data.nodes.map((data_node) => {
@@ -112,12 +123,54 @@ const CustomNodeFlow = () => {
     []
   );
 
+  const onEdgeMouseLeave = (event, edge) => {
+    const edgeId = edge.id;
+
+    // Updates edge
+    setEdges((prevElements) =>
+      prevElements.map((element) =>
+        element.id === edgeId
+          ? {
+              ...element,
+
+              data: {
+                ...element.data,
+
+                isHovered: false,
+              },
+            }
+          : element
+      )
+    );
+  };
+  const onEdgeMouseEnter = (event, edge) => {
+    const edgeId = edge.id;
+    // Updates edge
+    setEdges((prevElements) =>
+      prevElements.map((element) =>
+        element.id === edgeId
+          ? {
+              ...element,
+
+              data: {
+                ...element.data,
+
+                isHovered: true,
+              },
+            }
+          : element
+      )
+    );
+  };
+
   return (
     <ReactFlow
       nodes={nodes}
       edges={edges}
       onNodesChange={onNodesChange}
       onEdgesChange={onEdgesChange}
+      onEdgeMouseEnter={onEdgeMouseEnter}
+      onEdgeMouseLeave={onEdgeMouseLeave}
       onConnect={onConnect}
       style={{ background: bgColor }}
       nodeTypes={nodeTypes}
