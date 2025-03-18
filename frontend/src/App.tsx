@@ -63,22 +63,6 @@ function NodeWithToolbar({ data }) {
           key={"target" + id}
         />
       ))}
-      <NodeToolbar
-        isVisible={data.forceToolbarVisible || undefined}
-        position={data.toolbarPosition}
-      >
-        <div style={{ width: "40vw" }}>
-          <Graph
-            x={data.time}
-            y={data.port_potentials[2].map(
-              (_, idx) =>
-                data.port_potentials[2][idx] - data.port_potentials[0][idx]
-            )}
-            xlabel="Temps [s]"
-            ylabel="Différence de potentiel [V]"
-          />
-        </div>
-      </NodeToolbar>
       <div>{data?.label}</div>
     </>
   );
@@ -123,77 +107,58 @@ const CustomNodeFlow = () => {
     []
   );
 
-  const onEdgeMouseLeave = (event, edge) => {
-    const edgeId = edge.id;
-
-    // Updates edge
-    setEdges((prevElements) =>
-      prevElements.map((element) =>
-        element.id === edgeId
-          ? {
-              ...element,
-
-              data: {
-                ...element.data,
-
-                isHovered: false,
-              },
-            }
-          : element
-      )
-    );
-  };
-  const onEdgeMouseEnter = (event, edge) => {
-    const edgeId = edge.id;
-    // Updates edge
-    setEdges((prevElements) =>
-      prevElements.map((element) =>
-        element.id === edgeId
-          ? {
-              ...element,
-
-              data: {
-                ...element.data,
-
-                isHovered: true,
-              },
-            }
-          : element
-      )
-    );
-  };
-
   return (
-    <ReactFlow
-      nodes={nodes}
-      edges={edges}
-      onNodesChange={onNodesChange}
-      onEdgesChange={onEdgesChange}
-      onEdgeMouseEnter={onEdgeMouseEnter}
-      onEdgeMouseLeave={onEdgeMouseLeave}
-      onConnect={onConnect}
-      style={{ background: bgColor }}
-      nodeTypes={nodeTypes}
-      edgeTypes={edgeTypes}
-      snapToGrid={snap}
-      snapGrid={[20, 20]}
-      fitView
-      attributionPosition="bottom-left"
-    >
-      <MiniMap
-        nodeStrokeColor={(n) => {
-          if (n.type === "input") return "#0041d0";
-          if (n.type === "selectorNode") return bgColor;
-          if (n.type === "output") return "#ff0072";
+    <>
+      <div style={{ width: "70%", height: "100%" }}>
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          style={{ background: bgColor }}
+          nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
+          snapToGrid={snap}
+          snapGrid={[20, 20]}
+          fitView
+          attributionPosition="bottom-left"
+        >
+          <Controls />
+          <Background />
+        </ReactFlow>
+      </div>
+      <div
+        style={{
+          width: "40%",
+          height: "90%",
+          margin: "5%",
         }}
-        nodeColor={(n) => {
-          if (n.type === "selectorNode") return bgColor;
-          return "#fff";
-        }}
-      />
-      <Controls />
-      <Background />
-    </ReactFlow>
+      >
+        <div style={{ height: "50%" }}>
+          <Graph
+            x={(nodes || []).map((n) => n.data.time)[0] || []}
+            ys={(nodes || []).map((n) =>
+              n.data.time.map(
+                (t, idx) =>
+                  n.data.port_potentials[0][idx] -
+                  n.data.port_potentials[2][idx]
+              )
+            )}
+            xlabel="Temps [s]"
+            ylabels={(nodes || []).map((n) => n.data.label)}
+          />
+        </div>
+        <div style={{ height: "50%" }}>
+          <Graph
+            x={(edges || []).map((e) => e.data.time)[0] || []}
+            ys={(edges || []).map((e) => e.data.current)}
+            xlabel="Temps [s]"
+            ylabels={(edges || []).map((e) => e.id)}
+          />
+        </div>
+      </div>
+    </>
   );
 };
 

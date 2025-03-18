@@ -37,7 +37,7 @@ def test():
     elements: list[Element] = [
         Element(11, "V", 3@u_V),
         Element(12, "R", 5@u_Ω),
-        Element(13, "C", 1.@u_F)
+        Element(13, "L", 1000.@u_mH)
     ]
     connections: list[Connection] = [
         Connection(11, 3, 12, 2),
@@ -89,7 +89,7 @@ def test():
         N_V += 1
 
         if e.component == "V":
-            circuit.PulseVoltageSource(N_V, TMP, PORT_FMT(e.address, 2), e.value, )
+            circuit.PulseVoltageSource(N_V, TMP, PORT_FMT(e.address, 2), initial_value=0., pulsed_value=float(e.value), pulse_width=100., period=100., delay_time=0.1, rise_time=0.)
         else:
             compo(N_V, TMP, PORT_FMT(e.address, 2), e.value)
         N_V += 1
@@ -136,7 +136,7 @@ def test():
                 id=str(e.address),
                 position=Position(x=np.random.random()*300, y=np.random.random()*300),
                 data=NodeData(
-                    label=f"{e.component}{e.address}",
+                    label=f"{e.component}{e.address} : {e.value}",
                     component=e.component,
                     port_potentials = [to_list(analysis.nodes[PORT_FMT(e.address, k)]) for k in range(4)],
                     time = lt,

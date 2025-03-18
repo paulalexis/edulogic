@@ -10,24 +10,53 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-export function Graph({ x, y, xlabel, ylabel }) {
+const colors = [
+  "#FF6633",
+  "#66B3FF",
+  "#99DD99",
+  "#FFFF99",
+  "#B399FF",
+  "#FF99E6",
+];
+
+export function Graph({ x, ys, xlabel, ylabels }) {
   // Combine x and y arrays into an array of objects, which recharts needs
-  const data = x.map((_x, idx) => ({
-    name: x[idx], // could use xunit to create labels
-    [ylabel]: y[idx], // Use y values
-  }));
+  const data_0 = x.map((ex) => ({ x: ex }));
+
+  const data = data_0.map((d, t) => {
+    for (let i = 0; i < ylabels.length; i++) {
+      d[ylabels[i]] = ys[i][t];
+    }
+    return d;
+  });
 
   return (
-    <ResponsiveContainer width="100%" height={300}>
+    <ResponsiveContainer>
       <LineChart data={data}>
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="name" />
+        <XAxis dataKey="x" />
         <YAxis
-          label={{ [ylabel]: `${ylabel}`, angle: -90, position: "insideLeft" }}
+          label={
+            {
+              /*
+            [ylabel]: `${ylabel}`,
+            angle: -90,
+            position: "insideLeft",
+            */
+            }
+          }
         />
         <Tooltip />
         <Legend />
-        <Line type="monotone" dataKey={ylabel} stroke="#8884d8" />
+        {ylabels.map((lab, idx) => (
+          <Line
+            type="linear"
+            dataKey={lab}
+            dot={false}
+            key={lab}
+            stroke={colors[idx % colors.length]}
+          />
+        ))}
       </LineChart>
     </ResponsiveContainer>
   );

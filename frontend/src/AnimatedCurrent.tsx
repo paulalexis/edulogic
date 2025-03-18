@@ -7,7 +7,7 @@ import {
   Position,
   type EdgeProps,
 } from "@xyflow/react";
-import Tooltip, { Graph } from "./GraphHover";
+import { Graph } from "./GraphHover";
 
 function getPathLength(d: string): number {
   const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
@@ -42,8 +42,6 @@ export function AnimatedCurrent(props: EdgeProps) {
   } = props;
   const current =
     (data?.current.reduce((a, b) => a + b, 0) as number) / data?.current.length;
-
-  console.log(current);
 
   let [sX, sY, tX, tY, sP, tP] = [
     sourceX,
@@ -94,18 +92,6 @@ export function AnimatedCurrent(props: EdgeProps) {
     <>
       <BaseEdge id={id} path={edgePath} />
       {circles}
-      <EdgeLabelRenderer>
-        {Boolean(data?.isHovered) && (
-          <div style={{ width: "20vw" }}>
-            <Graph
-              x={data?.time}
-              y={data?.current}
-              xlabel="Temps [s]"
-              ylabel="Courant [A]"
-            />
-          </div>
-        )}
-      </EdgeLabelRenderer>
     </>
   );
 }
