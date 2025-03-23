@@ -76,8 +76,7 @@ const CustomNodeFlow = () => {
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
   useEffect(() => {
-    //fetch("http://127.0.0.1:5000/api/graph")
-    fetch("http://192.168.137.241:5000/api/graph")
+    const fetchData = () => fetch("http://192.168.137.241:5000/api/graph")
       .then((response) => response.json())
       .then((data) => {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -90,25 +89,23 @@ const CustomNodeFlow = () => {
           })
         );
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        setEdges((_old) =>
+        setEdges((old_edge) =>
           data.edges.map((data_edge) => {
             return {
               ...data_edge,
-              id:
-                "e" +
-                data_edge.source +
-                "p" +
-                data_edge.sourceHandle +
-                "->" +
-                data_edge.target +
-                "p" +
-                data_edge.targetHandle,
+              position: old_edge.position || data_edge.position,
+              id: "e" + data_edge.source + "p" + data_edge.sourceHandle + "->" + data_edge.target + "p" + data_edge.targetHandle,
               // animated: true,
               type: "animated-current",
             };
           })
         );
       }, []);
+
+    fetchData(); // Fetch immediately when the component mounts
+    // const intervalId = setInterval(fetchData, 5000); // Fetch every 5 seconds
+    // return () => clearInterval(intervalId); // Clear the interval when the component unmounts
+
   }, []);
 
   const onConnect = useCallback(

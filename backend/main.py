@@ -1,5 +1,10 @@
+from graph import *
+from okletsgo import get_nodes, get_edges, set_current
+
+from PySpice.Physics.SemiConductor import ShockleyDiode
+from PySpice.Doc.ExampleTools import find_libraries
 from flask import Flask, Response, jsonify, render_template
-from flask_cors import CORS # This lets React talk to Python
+from flask_cors import CORS  # This lets React talk to Python
 from PySpice.Probe.Plot import plot
 from PySpice.Spice.Library import SpiceLibrary
 from PySpice.Spice.Netlist import Circuit
@@ -12,14 +17,6 @@ import matplotlib.pyplot as plt
 import PySpice.Logging.Logging as Logging
 logger = Logging.setup_logging()
 
-from PySpice.Doc.ExampleTools import find_libraries
-from PySpice.Probe.Plot import plot
-from PySpice.Spice.Library import SpiceLibrary
-from PySpice.Spice.Netlist import Circuit
-from PySpice.Physics.SemiConductor import ShockleyDiode
-from PySpice.Unit import *
-
-from graph import *
 
 libraries_path = find_libraries()
 spice_library = SpiceLibrary(libraries_path)
@@ -28,12 +25,13 @@ spice_library = SpiceLibrary(libraries_path)
 app = Flask(__name__)
 CORS(app)
 
+
 @app.route('/api/graph')
 def test():
 
     print("-"*60)
 
-    
+    """
     elements: list[Element] = [
         Element(11, "V", 3@u_V),
         Element(12, "R", 5@u_Ω),
@@ -44,7 +42,6 @@ def test():
         Connection(12, 0, 13, 0),
         Connection(13, 2, 11, 1),
     ]
-    """
     connections: list[Connection] = [
         Connection(11, 0, 12, 0),
         Connection(11, 1, 13, 0),
@@ -53,34 +50,41 @@ def test():
     ]
     """
 
+    elements: list[Element] = get_nodes()
+    connections: list[Connection] = get_edges()
+
+    print(elements)
+    print(connections)
+
     circuit = Circuit("main")
 
-    PORT_FMT = lambda addr, port: f'el_{addr}_port_{port}' 
+    def PORT_FMT(addr, port): return f'el_{addr}_port_{port}'
 
     N_V = 0
 
     # make a ground
-    circuit.V(N_V, circuit.gnd, PORT_FMT(12, 0), 0@u_V)
+    circuit.V(N_V, circuit.gnd, PORT_FMT(elements[0].address, 0), 0@u_V)
     N_V += 1
 
     # connect port 0-1 and 2-3
     for e in elements:
         circuit.V(N_V, PORT_FMT(e.address, 0), PORT_FMT(e.address, 1), 0@u_V)
-        #circuit.R(N_V, PORT_FMT(e.address, 0), f"tmp_v{N_V}", 1@u_Ω)
-        #circuit.V(N_V, f"tmp_v{N_V}", PORT_FMT(e.address, 1), 0@u_V)
+        # circuit.R(N_V, PORT_FMT(e.address, 0), f"tmp_v{N_V}", 1@u_Ω)
+        # circuit.V(N_V, f"tmp_v{N_V}", PORT_FMT(e.address, 1), 0@u_V)
         N_V += 1
         circuit.V(N_V, PORT_FMT(e.address, 2), PORT_FMT(e.address, 3), 0@u_V)
-        #circuit.R(N_V, PORT_FMT(e.address, 2), f"tmp_v{N_V}", 1@u_Ω)
-        #circuit.V(N_V, f"tmp_v{N_V}", PORT_FMT(e.address, 3), 0@u_V)
+        # circuit.R(N_V, PORT_FMT(e.address, 2), f"tmp_v{N_V}", 1@u_Ω)
+        # circuit.V(N_V, f"tmp_v{N_V}", PORT_FMT(e.address, 3), 0@u_V)
         N_V += 1
 
     # actual components
     for e in elements:
         compo = {
-            "V": circuit.V,
+            "V": None,
             "R": circuit.R,
             "L": circuit.L,
             "C": circuit.C,
+            "AC": None,
         }[e.component]
 
         TMP = f"TMP_{N_V}"
@@ -89,40 +93,29 @@ def test():
         N_V += 1
 
         if e.component == "V":
-            circuit.PulseVoltageSource(N_V, TMP, PORT_FMT(e.address, 2), initial_value=0., pulsed_value=float(e.value), pulse_width=100., period=100., delay_time=0.1, rise_time=0.)
+            circuit.PulseVoltageSource(N_V, TMP, PORT_FMT(e.address, 2), initial_value=0., pulsed_value=float(
+                e.value), pulse_width=100., period=100., delay_time=0.1, rise_time=0.)
+        elif e.component == "AC":
+            circuit.PulseVoltageSource(N_V, TMP, PORT_FMT(e.address, 2), initial_value=0., pulsed_value=float(
+                e.value), pulse_width=0.1, period=0.2, delay_time=0.1, rise_time=0.)
         else:
             compo(N_V, TMP, PORT_FMT(e.address, 2), e.value)
         N_V += 1
 
-    # actual connections 
+    # actual connections
     for c in connections:
-        circuit.V(N_V, PORT_FMT(c.address1, c.port1), PORT_FMT(c.address2, c.port2), 0@u_V)
+        circuit.V(N_V, PORT_FMT(c.address1, c.port1),
+                  PORT_FMT(c.address2, c.port2), 0@u_V)
         c.numbered = N_V
         N_V += 1
 
-    #circuit.V(40, 'in', circuit.gnd, 1@u_V)
-    #circuit.R(1, 'in', circuit.gnd, 1@u_kΩ).plus.add_current_probe(circuit)
-    #circuit.R(2, 'in', circuit.gnd, 2@u_kΩ).plus.add_current_probe(circuit)
+    # circuit.V(40, 'in', circuit.gnd, 1@u_V)
+    # circuit.R(1, 'in', circuit.gnd, 1@u_kΩ).plus.add_current_probe(circuit)
+    # circuit.R(2, 'in', circuit.gnd, 2@u_kΩ).plus.add_current_probe(circuit)
 
     simulator = circuit.simulator(temperature=25, nominal_temperature=25)
-    analysis = simulator.operating_point()
+    # analysis = simulator.operating_point()
     analysis = simulator.transient(step_time=1@u_ms, end_time=1@u_s)
-    #analysis = simulator.ac(start_frequency=1e-6@u_Hz, stop_frequency=1@u_MHz, number_of_points=1, variation='dec')
-    #analysis = simulator.ac(start_frequency=1@u_MHz, stop_frequency=1@u_MHz, number_of_points=1, variation='lin')
-
-    
-    """
-    print(f"{analysis=}")
-    #print(f"{analysis['in']=}")
-    print(f"{circuit._nodes=}")
-    print(f"{circuit._elements=}")
-    print(f"{analysis.branches=}")
-    print(f"{analysis.nodes=}")
-    """
-    
-    print(f"{vars(analysis)=}")
-    print("---")
-    print(f"{np.array(analysis.nodes['el_12_port_2'][0], dtype=float)=}")
 
     def to_list(waveform):
         # print(waveform.abscissa)
@@ -130,16 +123,22 @@ def test():
 
     lt = to_list(analysis.time)
 
+    for e in elements:
+        current = float(analysis.branches[f"v{e.numbered}"].mean())
+        set_current(e.address, int(100*np.tanh(10.*current)))
+
     return jsonify(to_dicts(
         [
             Node(
                 id=str(e.address),
-                position=Position(x=np.random.random()*300, y=np.random.random()*300),
+                position=Position(x=np.random.random()*300,
+                                  y=np.random.random()*300),
                 data=NodeData(
-                    label=f"{e.component}{e.address} : {e.value}",
+                    label=f"{e.component}{e.address} : {e.value:.1e}{({'R': 'Ohm', 'V': 'V', 'L': 'H', 'C':'F'}).get(e.component, '')}",
                     component=e.component,
-                    port_potentials = [to_list(analysis.nodes[PORT_FMT(e.address, k)]) for k in range(4)],
-                    time = lt,
+                    port_potentials=[
+                        to_list(analysis.nodes[PORT_FMT(e.address, k)]) for k in range(4)],
+                    time=lt,
                 ),
             )
             for idx, e in enumerate(elements)
@@ -153,7 +152,7 @@ def test():
                 targetHandle=str(c.port2),
                 data=EdgeData(
                     current=to_list(analysis.branches[f"v{c.numbered}"]),
-                    time = lt,
+                    time=lt,
                 )
             )
             for idx, c in enumerate(connections)
@@ -167,7 +166,7 @@ def get_message():
     return jsonify(message)
 
 
-def to_dicts(nodes: List[Node], edges: List[Edge])-> Response:
+def to_dicts(nodes: List[Node], edges: List[Edge]) -> Response:
     nodes_dict = [node.__dict__ for node in nodes]
     edges_dict = [edge.__dict__ for edge in edges]
 
@@ -177,18 +176,25 @@ def to_dicts(nodes: List[Node], edges: List[Edge])-> Response:
 @app.route('/api/graphold')
 def get_graph_data():
     nodes = [
-        Node(id="1", position=Position(x=0, y=0), data=NodeData(label="[Py] Select me to show the toolbar")),
-        Node(id="2", position=Position(x=100, y=200), data=NodeData(label="Hello from the Python")),
-        Node(id="3", position=Position(x=500, y=200), data=NodeData(label="[Py] Node 3")),
+        Node(id="1", position=Position(x=0, y=0), data=NodeData(
+            label="[Py] Select me to show the toolbar")),
+        Node(id="2", position=Position(x=100, y=200),
+             data=NodeData(label="Hello from the Python")),
+        Node(id="3", position=Position(x=500, y=200),
+             data=NodeData(label="[Py] Node 3")),
     ]
     edges = [
-        Edge(id="e1-2", source="1", target="2", sourceHandle="0", targetHandle="2", data=EdgeData(10)),
-        Edge(id="e2-1", source="2", target="1", sourceHandle="0", targetHandle="2", data=EdgeData(10)),
-        Edge(id="e3-1", source="3", target="1", sourceHandle="2", targetHandle="3", data=EdgeData(-5)),
+        Edge(id="e1-2", source="1", target="2", sourceHandle="0",
+             targetHandle="2", data=EdgeData(10)),
+        Edge(id="e2-1", source="2", target="1", sourceHandle="0",
+             targetHandle="2", data=EdgeData(10)),
+        Edge(id="e3-1", source="3", target="1", sourceHandle="2",
+             targetHandle="3", data=EdgeData(-5)),
     ]
 
     return jsonify(to_dicts(nodes, edges))
 
+
 if __name__ == '__main__':
     # test()
-    app.run(debug=True)
+    app.run(debug=True, host="0.0.0.0")
