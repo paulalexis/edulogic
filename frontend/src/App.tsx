@@ -42,7 +42,7 @@ function NodeWithToolbar({ data }) {
             [Position.Left, Position.Left, Position.Right, Position.Right][k]
           }
           style={
-            [{ top: "20%" }, { top: "80%" }, { top: "20%" }, { top: "80%" }][k]
+            [{ top: "80%" }, { top: "20%" }, { top: "80%" }, { top: "20%" }][k]
           }
           id={id}
           key={"source" + id}
@@ -57,7 +57,7 @@ function NodeWithToolbar({ data }) {
             [Position.Left, Position.Left, Position.Right, Position.Right][k]
           }
           style={
-            [{ top: "20%" }, { top: "80%" }, { top: "20%" }, { top: "80%" }][k]
+            [{ top: "80%" }, { top: "20%" }, { top: "80%" }, { top: "20%" }][k]
           }
           id={id}
           key={"target" + id}
@@ -76,7 +76,8 @@ const CustomNodeFlow = () => {
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
   useEffect(() => {
-    fetch("http://127.0.0.1:5000/api/graph")
+    //fetch("http://127.0.0.1:5000/api/graph")
+    fetch("http://192.168.137.241:5000/api/graph")
       .then((response) => response.json())
       .then((data) => {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -93,7 +94,15 @@ const CustomNodeFlow = () => {
           data.edges.map((data_edge) => {
             return {
               ...data_edge,
-              id: "e" + data_edge.source + "->" + data_edge.target,
+              id:
+                "e" +
+                data_edge.source +
+                "p" +
+                data_edge.sourceHandle +
+                "->" +
+                data_edge.target +
+                "p" +
+                data_edge.targetHandle,
               // animated: true,
               type: "animated-current",
             };
